@@ -1,0 +1,143 @@
+<?php
+
+// hoooooks
+
+function h3nodeview_menu(){
+   $items['content/%'] = array(
+    'title' => 'nodeview', 
+    'page callback' => 'h3nodeview_viewnode', 
+	'page arguments' => array(1),
+	'access callback' => TRUE,
+	'weight' => -1,
+  );    
+  $items['form/1'] = array(
+    'title' => 'my form', 
+    'page callback' => 'drupal_get_form', 
+	'page arguments' => array('h3nodeview_myform_form'),
+	'access callback' => TRUE,
+	
+  );    
+   return $items;
+}
+
+function h3nodeview_block_info() {
+ 
+$blocks['my-block-id'] = array(
+    'info' => t('my_block'),
+	'status' => 1,
+	'pages' => 'node/*',
+	'visibility' => 'BLOCK_VISIBILITY_LISTED',
+  );
+  return $blocks;
+ }
+
+
+function h3nodeview_block_view($delta = '') {
+  
+  $block = array();
+  switch ($delta) {
+    case 'my-block-id':
+      $block['subject'] = t('This is my block');
+      $block['content'] = example_contents();
+      break;
+  }
+  return $block;
+}
+
+function example_contents() {
+  return '
+    </p><div class="body">
+      Hello World, this is a example custom Block
+    </div><p>
+  ';
+}
+// Caaaaaaaalbacks
+
+function h3nodeview_viewnode($nid){
+if (! is_numeric($nid)) return 'This nid is not a numeruc value';
+
+$node = node_load($nid);
+
+if(! $node) return "Node doesn't exist";
+
+$node->title = ' This in node  ' . $nid ;
+$output = node_view($node);
+
+return   $output; 
+   
+}
+
+function h3nodeview_node_presave($node)
+{
+dpm($node);
+}
+
+function h3nodeview_myform_form($form,&$form_submit)
+{
+
+$form['nodetitle'] = array(
+'#type' => 'textfield',
+'#title' => t('Title '), 
+'#maxlength' => 500, 
+'#size' => 60, 
+'#required' => TRUE,
+);
+
+$form['body'] = array(
+'#type' => 'textarea',
+'#title' => t(' Node Body '), 
+'#size' => 60, 
+'#maxlength' => 128, 
+'#required' => TRUE,
+);
+
+
+
+$form['selected'] = array(
+       '#type' => 'select',
+       '#title' => t('Selected'),
+       '#options' => array(
+         0 => t('article'),
+         1 => t('basic page'),
+       ), 
+ 
+);
+
+$form['Submit'] = array(
+'#type' => 'submit',
+'#value' => t('Submit'),
+
+);
+
+$form['#submit'][] = 'h3nodeview_myform_OnSubmit';
+ 
+return $form;
+}
+
+
+
+
+function h3nodeview_myform_OnSubmit(&$form, &$form_state)
+{
+
+  global $user;
+
+  $node = new stdClass();
+  $node->title = $form_state['values']['nodetitle'];
+if ($form_state['values']['selected'] == '0') $node->type = "article"; 
+    else  $node->type = "basic page";
+  $node->language = LANGUAGE_NONE;
+  $node->body[$node->language][0]['value']   = $form_state['values']['body'];
+  node_object_prepare($node); 
+ 
+  $node->uid = $user->uid; 
+  $node->status = 1; //(1 or 0): published or not
+  $node->promote = 0; //(1 or 0): promoted to front page
+  $node->comment = 1; //2 = comments on, 1 = comments off
+
+  
+  $node = node_submit($node); // Prepare node for saving
+  node_save($node);
+  drupal_set_message( "Node with nid " . $node->nid . " saved!\n");
+
+}
