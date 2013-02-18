@@ -1,0 +1,6 @@
+name = h3viewnode
+description = test proof of concept module
+package = view
+version = VERSION
+core = 7.x
+files[] = h3viewnode.module
